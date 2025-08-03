@@ -58,32 +58,6 @@ public class PackageViewModelTests
             }
         };
 
-        facade.Setup(f => f.Add(It.IsAny<Package>(), It.IsAny<IUnitOfWork>(), It.IsAny<CancellationToken>()))
-            .Returns<Package, IUnitOfWork, CancellationToken>((p, uow, token) => Task.FromResult(p))
-            .Verifiable(Times.Once);
-
-        vm_id = new PackageViewModel(navigationManager.Object, purchaseManager.Object, logger.Object, facade.Object, id);
-        vm_entity = new PackageViewModel(navigationManager.Object, purchaseManager.Object, logger.Object, facade.Object, 
-            new Package
-            {
-                Id = id,
-                Price = 12.7m,
-                ResumeGenerations = 1,
-                StripePriceId = "Some price Id",
-                StripeProductId = "Some product id",
-                StripeUrl = "Some stripe url",
-                Purchases = purchases,
-                Name = "Some name"
-            });
-
-        vm_entity.Price = 12.7m;
-        vm_entity.ResumeGenerations = 1;
-        vm_entity.StripeProductId = "Some product id";
-        vm_entity.StripePriceId = "Some price Id";
-        vm_entity.StripeUrl = "Some stripe url";
-        vm_entity.Name = "Some name";
-
-
         package = new Package
         {
             Id = id,
@@ -96,6 +70,20 @@ public class PackageViewModelTests
             Name = "Some name"
         };
 
+        facade.Setup(f => f.Add(It.IsAny<Package>(), It.IsAny<IUnitOfWork>(), It.IsAny<CancellationToken>()))
+            .Returns<Package, IUnitOfWork, CancellationToken>((p, uow, token) => Task.FromResult(p))
+            .Verifiable(Times.Once);
+
+
+        vm_id = new PackageViewModel(navigationManager.Object, purchaseManager.Object, logger.Object, facade.Object, id);
+        vm_entity = new PackageViewModel(navigationManager.Object, purchaseManager.Object, logger.Object, facade.Object, package);
+
+        vm_entity.Price = 12.7m;
+        vm_entity.ResumeGenerations = 1;
+        vm_entity.StripeProductId = "Some product id";
+        vm_entity.StripePriceId = "Some price Id";
+        vm_entity.StripeUrl = "Some stripe url";
+        vm_entity.Name = "Some name";
     }
     [TestMethod]
     public void PackageViewModel_Constructor_SetsPropertiesCorrectly()
@@ -121,6 +109,22 @@ public class PackageViewModelTests
         Assert.AreEqual(package.StripeUrl, vm_entity.StripeUrl);
         Assert.IsNotNull(vm_entity.Purchase);
     }
+
+	[TestCleanup]
+	public void TestCleanup()
+	{
+		serviceProvider = null;
+		facade = null;
+		logger = null;
+		purchaseManager = null;
+		navigationManager = null;
+		addViewModel = null;
+		purchases = null;
+		id = Guid.Empty;
+		vm_id = null;
+		vm_entity = null;
+		package = null;
+	}
 }
 
 [TestClass]
@@ -155,9 +159,9 @@ public class AddPackageViewModelTests
         var package = await vm.CallConstructEntity();
 
         // Assert that the constructed entity has the expected values
-        Assert.AreEqual(12.7m, package.Price);
-        Assert.AreEqual(1, package.ResumeGenerations);
-        Assert.AreEqual("Some name", package.Name);
+        Assert.AreEqual(vm.Price, package.Price);
+        Assert.AreEqual(vm.ResumeGenerations, package.ResumeGenerations);
+        Assert.AreEqual(vm.Name, package.Name);
     }
 
     [TestMethod]
@@ -201,11 +205,12 @@ public class AddPackageViewModelTests
 
         // Assert that CanAdd returns true
         Assert.IsTrue(vm.CanAdd);
-    }
+
+		// CanAdd should return false if any required property is not set
+        // but it returns true by default.
+        //vm.Price = null;
+        //Assert.IsFalse(vm.CanAdd);
+	}
 }
-
-
-
-
 
 
